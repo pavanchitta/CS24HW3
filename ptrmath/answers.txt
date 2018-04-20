@@ -1,0 +1,30 @@
+Answers for the "Arrays, Pointer Arithmetic, and Structs" section of CS24 HW3:
+
+1. The array of bytes will look as follows (Each byte is separated by a
+space and each digit is in hexadecimal):
+
+00 00 00 EF BE AD DE 00 00 00 00 00 BE BA FE CA
+
+The ordering of the digits that are set is reversed in terms of place
+value per byte because x86-64 processors store multi-byte sequences in
+little-endian format. The first line after setting all bytes to zero will first
+increment p by 3 to point to the fourth byte (index 3) and then it casts
+the pointer to an int * so that when we dereference, it can actually set
+4 bytes worth of values instead of just one.
+
+The next line first casts the pointer to an int *, and then increments by 3.
+Because the pointer is now int *, this will actually increment the pointer by
+4*3 = 12 places. We then set the bytes just like above.
+
+2. i) int id        offset: 0   size: 4 bytes
+  ii) char code[5]  offset: 4   size: 5 bytes
+ iii) padding        ------ 7 bytes -------
+  iv) entry* next   offset: 16  size: 8 bytes
+
+  Total size of the struct is 24 bytes. 7 bytes are unused.
+
+3. arr is an array of entry structs. Each struct has size 24 bytes. Thus,
+in the line arr[4].code[3], we know that to get to the fourth index of arr
+(fifth element), the index must be 4 * 24, and then we have to get to the fourth
+element of the code array of chars, so that will be +7 based on answer to
+2. So the total value of offset is 4*24 + 7 =  103.
