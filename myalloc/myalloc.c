@@ -98,12 +98,12 @@ unsigned char *myalloc(int size) {
      *        Your allocator will be more sophisticated!
      */
 
-    printf("Sanity Check Result: %d\n", sanity_check());
+    //printf("Sanity Check Result: %d\n", sanity_check());
     header *h = (header *) startptr;
     header *best_header = h;
     int min_diff = INT_MAX;
     /* Implement best-fit strategy for finding available space */
-    printf("size to allocate: %d\n", size);
+    //printf("size to allocate: %d\n", size);
     while ((unsigned char *) h < startptr + MEMORY_SIZE) {
         if ( h->size > 0 && (h->size > size)) {
             int diff = h->size - size;
@@ -117,13 +117,12 @@ unsigned char *myalloc(int size) {
     }
 
     if ( best_header->size > 0 && (best_header->size > size)) {
-        printf("excess: %d",best_header->size > size );
         unsigned char *resultptr;
         if ((int)((void *) best_header + best_header->size  - ((void *) best_header +
         size) > sizeof(header))) {
             resultptr = (void *) best_header + sizeof(header) + size;
             footer *f = (footer *) resultptr;
-            printf("position of footer: %p", f);
+            //printf("position of footer: %p", f);
             f->size = -1*(size);
             resultptr += sizeof(footer);
             int temp = best_header->size;
@@ -141,7 +140,7 @@ unsigned char *myalloc(int size) {
             best_header->size *= -1;
         }
 
-        printf("Sanity Check Result: %d\n", sanity_check());
+        //printf("Sanity Check Result: %d\n", sanity_check());
         resultptr = (unsigned char *) best_header + sizeof(header);
         return resultptr;
     }
@@ -158,9 +157,42 @@ unsigned char *myalloc(int size) {
  * myalloc().
  */
 void myfree(unsigned char *oldptr) {
-    printf("entered");
-    header *h = (header *) oldptr;
+    header *h = (header *) oldptr - 1;
     h->size *= -1;
+    footer *f = (footer *) (oldptr + h->size);
+    f->size *= -1;
+    int combined_size = h->size;
+
+    // Forward coalesce check
+    header *h2 = (header *)((void *) h + h->size + 2 * sizeof(header));
+    if ( (unsigned char *) h2 < (startptr + MEMORY_SIZE)) {
+        if (h2->size > 0) {
+            combined_size += h2->size + 2 * sizeof(header);
+            footer *old_footer = (footer *) (h2 - 1);
+            old_footer->size = 0;
+            footer *new_footer = (footer *)((void*) h2 + h2->size + sizeof(header));
+            new_footer->size = combined_size;
+            h->size = combined_size;
+            h2->size = 0;
+            num_blocks--;
+
+        }
+    }
+    // Back coalesce check
+    footer *f2 = (footer *) (h - 1);
+    if ((unsigned char *) f2 > startptr) {
+        if (f2->size > 0) {
+            combined_size += f2->size + 2 * sizeof(header);
+            footer *old_footer = (footer *) (h2 - 1);
+            old_footer->size = 0;
+            header *h2 =  (header *)((void *) h - f2->size - 2*sizeof(footer));
+            h2->size = combined_size;
+            footer *new_footer = (footer *)((void*) h + h->size + sizeof(header));
+            new_footer->size = combined_size;
+            h->size = 0;
+            num_blocks--;
+        }
+    }
 
 }
 
@@ -179,21 +211,21 @@ int sanity_check() {
     int size = 0;
     int old_size = 0;
     header *h = (header *) startptr;
-    printf("#blocks: %d\n", num_blocks);
+    //printf("#blocks: %d\n", num_blocks);
     while (count < num_blocks) {
         old_size = size;
         size += abs(h->size) + 2*sizeof(header); //account for the footer
-        if (h->size > 0) {
+        /*if (h->size > 0) {
             printf("free space left = %d ", h->size);
-        }
+        }*/
         h = (void *) h + size - old_size;
         count++;
 
 
     }
-    printf("total size: %d ", size);
+    /*printf("total size: %d ", size);
     printf("last position %p ", startptr + MEMORY_SIZE);
-    printf("Where h is at: %p\n", h);
+    printf("Where h is at: %p\n", h);*/
     if (size == MEMORY_SIZE && (unsigned char *) h == startptr + MEMORY_SIZE) {
         return 1;
     } else {

@@ -37,12 +37,12 @@ int main(int argc, char *argv[]) {
 
     /* Perform simple allocations and deallocations. */
     /* Change the below code as you see fit, to test various scenarios. */
-    /*for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 2; i++) {
         unsigned char *a = allocate(200, 'A');
         unsigned char *b = allocate(200, 'B');
-        myfree(a);
         myfree(b);
-    }*/
+        myfree(a);
+    }
 
     unsigned char *c = allocate(100, 'C');
 
