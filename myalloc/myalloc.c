@@ -103,6 +103,7 @@ unsigned char *myalloc(int size) {
     header *best_header = h;
     int min_diff = INT_MAX;
     /* Implement best-fit strategy for finding available space */
+    printf("size to allocate: %d\n", size);
     while ((unsigned char *) h < startptr + MEMORY_SIZE) {
         if ( h->size > 0 && (h->size > size)) {
             int diff = h->size - size;
@@ -116,18 +117,30 @@ unsigned char *myalloc(int size) {
     }
 
     if ( best_header->size > 0 && (best_header->size > size)) {
+        printf("excess: %d",best_header->size > size );
+        unsigned char *resultptr;
+        if ((int)((void *) best_header + best_header->size  - ((void *) best_header +
+        size) > sizeof(header))) {
+            resultptr = (void *) best_header + sizeof(header) + size;
+            footer *f = (footer *) resultptr;
+            printf("position of footer: %p", f);
+            f->size = -1*(size);
+            resultptr += sizeof(footer);
+            int temp = best_header->size;
+            best_header->size = -1*(size);
+            header *h2 = (header *) resultptr;
+            h2->size = temp - (size) - sizeof(footer) - sizeof(header);
+            footer *old_footer = (void *) best_header + size + 3*sizeof(header) + h2->size;
+            old_footer->size = h2->size;
+            num_blocks++;
+        }
+        else {
+            resultptr = (void *) best_header + sizeof(header) + best_header->size;
+            footer *f = (footer *) resultptr;
+            f->size *=-1;
+            best_header->size *= -1;
+        }
 
-        unsigned char *resultptr = (void *) best_header + sizeof(header) + size;
-        footer *f = (footer *) resultptr;
-        f->size = -1*(size);
-        resultptr += sizeof(footer);
-        int temp = best_header->size;
-        best_header->size = -1*(size);
-        header *h2 = (header *) resultptr;
-        h2->size = temp - (size) - sizeof(footer) - sizeof(header);
-        footer *old_footer = (void *) best_header + size + 3*sizeof(header) + h2->size;
-        old_footer->size = h2->size;
-        num_blocks++;
         printf("Sanity Check Result: %d\n", sanity_check());
         resultptr = (unsigned char *) best_header + sizeof(header);
         return resultptr;
@@ -145,13 +158,10 @@ unsigned char *myalloc(int size) {
  * myalloc().
  */
 void myfree(unsigned char *oldptr) {
-    /* TODO:
-     *
-     * The unacceptable allocator does nothing -- that's part of why this is
-     * unacceptable!
-     *
-     * Allocations will succeed for a little while...
-     */
+    printf("entered");
+    header *h = (header *) oldptr;
+    h->size *= -1;
+
 }
 
 /*!
@@ -168,17 +178,22 @@ int sanity_check() {
     int count = 0;
     int size = 0;
     int old_size = 0;
-    //unsigned char *p = startptr;
     header *h = (header *) startptr;
+    printf("#blocks: %d\n", num_blocks);
     while (count < num_blocks) {
         old_size = size;
         size += abs(h->size) + 2*sizeof(header); //account for the footer
-
+        if (h->size > 0) {
+            printf("free space left = %d ", h->size);
+        }
         h = (void *) h + size - old_size;
         count++;
 
-    }
 
+    }
+    printf("total size: %d ", size);
+    printf("last position %p ", startptr + MEMORY_SIZE);
+    printf("Where h is at: %p\n", h);
     if (size == MEMORY_SIZE && (unsigned char *) h == startptr + MEMORY_SIZE) {
         return 1;
     } else {
