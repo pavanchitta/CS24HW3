@@ -3,7 +3,7 @@ CFLAGS = -g -Wall -Werror
 ASFLAGS = -g
 
 
-all: testunacceptable testmyalloc
+all: testunacceptable testmyalloc simpletest
 
 
 clean:
@@ -26,4 +26,3 @@ simpletest: simpletest.o myalloc.o
 
 
 .PHONY: all clean
-

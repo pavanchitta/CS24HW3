@@ -39,14 +39,12 @@ int main(int argc, char *argv[]) {
     /* Change the below code as you see fit, to test various scenarios. */
 
     unsigned char *a = allocate(100, 'A');
-    // unsigned char *b = allocate(200, 'B');
+    unsigned char *b = allocate(200, 'B');
 
     myfree(a);
-    // myfree(b);
+    myfree(b);
 
     close_myalloc();
 
     return 0;
 }
-
-

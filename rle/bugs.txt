@@ -4,11 +4,13 @@ Bugs in rl_decode() function:
 They are actually stored in the even locations since the indexing starts
 from 0 and the count is stored first.
 
-2. In old line 45, the counter %rcx is only being incremented by 1. In order
+2. add     $1, %rcx
+In old line 45, the counter %rcx is only being incremented by 1. In order
 to get to the next count, it should be incremented by two, since the value in
 between is actually the value to be stored.
 
-3. In old line 40, the total count that is being accumulated is being added
+3. add    (%rdi, %rcx), %bl
+In old line 40, the total count that is being accumulated is being added
 into %bl. This is a single byte register, and thus can only hold a count
 up to 255. But the total count for the input can be bigger than that and thus
 overflow can occur. Hence we need to use a bigger portion of the register.
@@ -19,13 +21,15 @@ into a byte register %r8b (caller-save) and then we zero-extend into %r11d,
 a 32-bit register, and then we add into %ebx. This takes care of the size
 mismatch.
 
-4. In the call to malloc section of the code, Ben didn't save the %rsi and
+4. call    malloc
+In the call to malloc section of the code, Ben didn't save the %rsi and
 %rdx registers before calling malloc, even though these are caller save
 and we need these registers. malloc may change the values of these registers
 and thus we need to first push these registers onto the stack and then pop
 them off once the malloc function returns.
 
-5. In old line 73, we see that the %r10 register is being used as an index
+5. mov     %bl, (%rax, %r10)
+In old line 73, we see that the %r10 register is being used as an index
 for where to write the value. However, this index is never being incremented
 and thus we are simply overwriting the same memory during each iteration.
-Hence we need to add the line inc %r10. 
+Hence we need to add the line inc %r10.
