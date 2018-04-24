@@ -29,3 +29,14 @@ void myfree(unsigned char *oldptr);
 void close_myalloc();
 
 int sanity_check();
+
+typedef struct header {
+         /* Negative size means the block is allocated, */
+         /* positive size means the block is available. */
+         int size;
+}header;
+typedef struct footer {
+         /* Negative size means the block is allocated, */
+         /* positive size means the block is available. */
+         int size;
+}footer;

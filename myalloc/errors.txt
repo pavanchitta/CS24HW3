@@ -1,0 +1,63 @@
+EXPLICIT ALLOCATOR ROBUSTNESS
+-----------------------------
+
+(a)
+
+i) If myfree is called with an address that did not originate from myalloc,
+that must mean that the address is either less than the startptr or it is
+greater than or equal to startptr + MEMORY_SIZE. This is checked at the
+beginning of the myfree function as a preliminary check and thus if the
+allocator finds that an invalid address to free has been input, it will
+notify the user and terminate the program.
+
+ii) The second case is when myfree is called with an address that is contained
+within a memory block that was allocated with myalloc. This is a more complex
+issue to solve and the current myfree does not consider it. What will happen
+is that the program will assume that oldptr points to the beginning of a
+memory block and by the format of the memory, it will assume that if we
+subtract sizeof(header) from the oldptr, we will be at the header for that
+memory block that we need to free. This is done with the line
+header *h = (header *) oldptr - 1;
+
+However, now that the oldptr is in the middle of the memory block, the above
+line will make h point to an address that is still in the memory block or
+not pointing to the beginning of the header struct. This means that when
+we try to dereference the pointer to get the size attribute, we will actually
+be getting garbage value that is stored at the address that h points to.
+This will cause the perceived amount of memory to free to be incorrect and
+equal to some garbage value. Because of this, the attempt to forward coalesce
+and backward coalesce will also get messed up, because the addresses of the
+next and previous block (h2 and f2) will be calculated according to this
+header h, and
+since h has that wrong value, the values for the pointers to the adjacent
+headers and footers will also be wrong by some offset, and garbage values will
+be read. The main issue with this offset from the correct value of the pointers
+is that when we try to access the size attribute, we will get a garbage value
+that is completely different from the actual value, but the program assumes
+that this is the correct value and carries on with the freeing of memory.
+
+iii) The third case is when the input address corresponds to a block that
+has already been freed. This is an easy fix because we know that a free
+block is one in which the size is positive, and an allocated block
+is one in which the size s negative. The function myfree has a condition
+at the beginning of the function which checks whether the header associated
+with this block has attribute size that is positive or negative. If it is
+positive, that means that the block is already available and thus can't
+be freed. If the size value is negative, the program continues with
+the function. This is implemented in the lines
+if (h->size > 0) {
+    fprintf(stderr, "Block is already freed");
+    exit(1);
+}
+
+(b) The first and third errors are handled by the myfree function and are
+discussed in part a above.
+
+The second error is not handled by the myfree function because it has no
+way of checking whether the address input to the function is actually
+pointing to the beginning of a block. In order to fix this issue, the
+program can maintain a global hashtable of header addresses that is added
+to each time a new block is added in the myalloc functon. Then, when the
+myfree function is called, the program can first check if
+header *h = (header *) oldptr - 1 corresponds to an address that points to
+an actual header struct. If not, the program can notify the user and terminate.

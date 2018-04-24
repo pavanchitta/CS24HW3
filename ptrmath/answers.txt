@@ -18,8 +18,8 @@ Because the pointer is now int *, this will actually increment the pointer by
 
 2. i) int id        offset: 0   size: 4 bytes
   ii) char code[5]  offset: 4   size: 5 bytes
- iii) padding        ------ 7 bytes -------
-  iv) entry* next   offset: 16  size: 8 bytes
+  iii) padding        ------ 7 bytes -------
+   iv) entry* next   offset: 16  size: 8 bytes
 
   Total size of the struct is 24 bytes. 7 bytes are unused.
 

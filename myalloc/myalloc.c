@@ -32,18 +32,7 @@ unsigned char *mem;
  *        You can declare data types, constants, and statically declared
  *        variables for managing your memory pool in this section too.
  */
-static unsigned char *freeptr;
 static unsigned char *startptr;
-typedef struct header {
-         /* Negative size means the block is allocated, */
-         /* positive size means the block is available. */
-         int size;
-}header;
-typedef struct footer {
-         /* Negative size means the block is allocated, */
-         /* positive size means the block is available. */
-         int size;
-}footer;
 int num_blocks;
 
 
@@ -72,8 +61,6 @@ void init_myalloc() {
     }
 
     /* initialize the initial state of memory pool. */
-
-    freeptr = mem;
     startptr = mem;
     header *h = (header *) mem; // Cast the mem pointer to header * to set size
     h->size = MEMORY_SIZE - 2*sizeof(header); //size only holds the size of
@@ -119,10 +106,10 @@ unsigned char *myalloc(int size) {
     if ( best_header->size > 0 && (best_header->size > size)) {
         unsigned char *resultptr;
         if ((int)((void *) best_header + best_header->size  - ((void *) best_header +
-        size) > sizeof(header))) {
+        size) > 2*sizeof(header))) {
             resultptr = (void *) best_header + sizeof(header) + size;
             footer *f = (footer *) resultptr;
-            //printf("position of footer: %p", f);
+            //printf("entered first condition");
             f->size = -1*(size);
             resultptr += sizeof(footer);
             int temp = best_header->size;
@@ -134,6 +121,7 @@ unsigned char *myalloc(int size) {
             num_blocks++;
         }
         else {
+            //printf("entered second condition");
             resultptr = (void *) best_header + sizeof(header) + best_header->size;
             footer *f = (footer *) resultptr;
             f->size *=-1;
@@ -145,8 +133,7 @@ unsigned char *myalloc(int size) {
         return resultptr;
     }
     else {
-        fprintf(stderr, "myalloc: cannot service request of size %d with"
-                " %lx bytes allocated\n", size, (freeptr - mem));
+        fprintf(stderr, "myalloc: cannot service request of size %d\n", size);
         return (unsigned char *) 0;
     }
 }
@@ -157,7 +144,19 @@ unsigned char *myalloc(int size) {
  * myalloc().
  */
 void myfree(unsigned char *oldptr) {
+
+    if (oldptr < startptr || oldptr >= startptr + MEMORY_SIZE) {
+        fprintf(stderr, "address to free did not originate from myalloc");
+        exit(1);
+    }
+
     header *h = (header *) oldptr - 1;
+
+    if (h->size > 0) {
+        fprintf(stderr, "Block is already freed");
+        exit(1);
+    }
+
     h->size *= -1;
     footer *f = (footer *) (oldptr + h->size);
     f->size *= -1;
@@ -212,13 +211,20 @@ int sanity_check() {
     int old_size = 0;
     header *h = (header *) startptr;
     //printf("#blocks: %d\n", num_blocks);
+    //printf("startptr %p\n", startptr);
     while (count < num_blocks) {
+        //printf("current value of h pointer %p ", h);
         old_size = size;
         size += abs(h->size) + 2*sizeof(header); //account for the footer
         /*if (h->size > 0) {
-            printf("free space left = %d ", h->size);
-        }*/
+            printf("adding free space = %d ", h->size);
+        }
+        if (h->size < 0) {
+            printf("adding allocated space = %d ", h->size);
+        }
+        printf("incrementing the pointer by: %p\n", (void *) h + size - old_size);*/
         h = (void *) h + size - old_size;
+        //printf("new value of h pointer %p ", h);
         count++;
 
 
