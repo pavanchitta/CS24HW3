@@ -105,8 +105,8 @@ unsigned char *myalloc(int size) {
 
     if ( best_header->size > 0 && (best_header->size > size)) {
         unsigned char *resultptr;
-        if ((int)((void *) best_header + best_header->size  - ((void *) best_header +
-        size) > 2*sizeof(header))) {
+        if ((void *) best_header + best_header->size  - ((void *) best_header +
+        size) > 2*sizeof(header)) {
             resultptr = (void *) best_header + sizeof(header) + size;
             footer *f = (footer *) resultptr;
             //printf("entered first condition");
